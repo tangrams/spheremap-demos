@@ -15,7 +15,7 @@ styles:
         shaders:
             uniforms:
                 u_scale: .5
-                u_envmap: ../img/color-pencil2.jpg
+                u_envmap: ../img/color-pencil3.jpg
             blocks:
                 global: |
                     // Simplified view-independent environment map

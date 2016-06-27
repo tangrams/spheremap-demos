@@ -29,7 +29,7 @@ map = (function () {
     }
 
     // determine the scene url and content to load during start-up
-    var scene_url = 'styles/crayon.yaml';
+    var scene_url = 'styles/color-pencil.yaml';
 
     // If there is a query, use it as the scene_url
     var query = parseQuery(window.location.search.slice(1));
