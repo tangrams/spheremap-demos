@@ -127,7 +127,7 @@ styles:
         shaders:
             uniforms:
                 u_scale: 1 # higher values are more exaggerated
-                u_envmap: ../img/kelsey-brookes2.jpg
+                u_envmap: ../img/glitch2.jpg
             blocks:
                 global: |
                     vec4 terrainEnvmap (in sampler2D _tex, in vec3 _normal) {
