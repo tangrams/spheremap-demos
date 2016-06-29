@@ -519,7 +519,7 @@ layers:
             nature_reserve:
                 filter: { kind: nature_reserve, $zoom: { min: 7 } }
                 draw:
-                    terrain-grid:
+                    terrain:
                         order: function() { return feature.sort_key; }
                 wilderness-areas:
                     filter: function() { return feature.name && feature.name.indexOf("Wilderness") > -1 }
