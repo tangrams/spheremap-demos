@@ -1,0 +1,730 @@
+sources:
+    mapzen: 
+        type: TopoJSON
+        url: https://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-JUsa0Gc
+        max_zoom: 16
+        rasters: [normals]
+    normals:
+        type: Raster
+        url: https://terrain-preview.mapzen.com/normal/{z}/{x}/{y}.png
+        max_zoom: 15
+
+styles: 
+    terrain:
+        base: polygons
+        # mix: [grid]
+        raster: normal
+        shaders:
+            uniforms:
+                # u_envmap: images/relief-shading-environment-map.jpg
+                u_envmap: ../img/outdoor-map.jpg
+                u_contrast: 1.
+                u_brightness: 1.
+            blocks:
+                global: |
+                    // Simplified view-independent environment map
+                    vec4 terrainEnvmap (in sampler2D _tex, in vec3 _normal) {
+                        const vec3 eye = vec3(0.,0.,-1.);
+                        vec3 r = reflect(eye, _normal);
+                        r.z += 1.;
+                        float m = 2. * length(r);
+                        vec2 uv = r.xy / m + .5;
+                        return texture2D(_tex, uv);
+                    }
+                    const float e = 2.71828;
+                color: |
+                    // scale up normals with a function
+                    // https://www.desmos.com/calculator/bv4mzh8erz
+                    //float scale = 10./(u_map_position.z-.7) + 1.8;
+                    float scale1 = 20./(u_map_position.z) + 1.5;
+                    normal.z /= scale1; // turn terrain exaggeration up/down
+                    // fade out spheremap normals with a function
+                    // https://www.desmos.com/calculator/ptgkzcnfyc
+                    float m = 3.5 * (u_map_position.z - 0.8) * pow(e, u_map_position.z * -.29);
+                    m = clamp(m, 0., 1.5);
+                    color = terrainEnvmap(u_envmap, normal);
+
+                    // Apply contrast
+                    float contrast = m;
+                    color.rgb = ((color.rgb - 0.5) * max(contrast, 0.)) + 0.5;
+                    // Apply brightness
+                    float brightness = .5 - m * .5;
+                    color.rgb += brightness;
+
+                    color *= v_color; // apply layer color
+
+layers:
+    earth:
+        data: { source: mapzen}
+        draw:
+            terrain:
+                order: function() { return feature.sort_key; }
+                color: [1.0, 1.0, 1.0]
+
+    water:
+        data: { source: mapzen, layer: water }
+        draw:
+            polygons:
+                #interactive: true
+                order: function() { return feature.sort_key; }
+                #color: [0.608,0.925,0.965]
+        later:
+            filter: { $zoom: { min: 12 } }
+            draw:
+                polygons:
+                    order: function() { return feature.sort_key + 1; }
+                    #color: [0.608,0.925,0.965]
+
+        lakes:
+            filter:
+                all:
+                    - kind: [ocean, lake, water, riverbank, reservoir, swimming_pool]
+                # WARNING: any area filters here must match the area filters in the water_boundaries-not-ocean layer
+                any:
+                    # limit show smaller landuse areas to higher zooms
+                    - { $zoom: { min: 1 },  area: { min: 40000000000 } }
+                    - { $zoom: { min: 2 },  area: { min: 20000000000 } }
+                    # some weird natural earth scale set transition
+                    - { $zoom: { min: 3 },  area: { min: 80000000000 } }
+                    - { $zoom: { min: 4 },  area: { min: 5000000000 } }
+                    - { $zoom: { min: 5 },  area: { min: 700000000 } }
+                    - { $zoom: { min: 6 },  area: { min: 500000000 } }
+                    - { $zoom: { min: 7 },  area: { min: 160000000 } }
+                    - { $zoom: { min: 8 },  area: { min: 40000000 } }
+                    - { $zoom: { min: 9 },  area: { min: 10000000 } }
+                    - { $zoom: { min: 10 }, area: { min: 8000000 } }
+                    - { $zoom: { min: 11 }, area: { min: 2000000 } }
+                    - { $zoom: { min: 12 }, area: { min: 200000 } }
+                    - { $zoom: { min: 13 }, area: { min: 100000 } }
+                    - { $zoom: { min: 14 }, area: { min: 2000 } }
+                    - { $zoom: { min: 15 } }
+            draw:
+                polygons:
+                    # color: [0.608,0.925,0.965] ## original color
+                    # color: [0.528,0.902,0.960] ## more saturated
+                    color: [0.432,0.890,0.960] ## even more saturated
+        playas:
+            filter: { kind: playa, $zoom: {min: 6} }
+            draw:
+                dashedline:
+                    order: function() { return feature.sort_key; }
+                    color: grey
+                    width: 1px
+                polygons_transparent:
+                    color: [0.85,0.85,0.85, 0.5]
+        other-water-areas:
+            filter: { not: { kind: [ocean, lake, water, reservoir, playa] }, $zoom: { min: 11 }, area: { min: 100 } }
+            draw:
+                polygons:
+                    color: [0.432,0.890,0.960]
+        swimming_pool:
+            filter: { kind: swimming_pool }
+            draw:
+                polygons:
+                    color: [0.432,0.890,0.960]
+        water-boundary-ocean-early:
+            filter: { boundary: yes, kind: ocean, $zoom: {min: 1, max: 17} }
+            draw:
+                lines:
+                    order: function() { return feature.sort_key; }
+                    color: [0.431,0.806,0.914]
+                    width: 1px
+                    join: round
+        water-boundary-ocean-late:
+            filter: { boundary: yes, kind: ocean, $zoom: {min: 17} }
+            draw:
+                lines:
+                    order: function() { return feature.sort_key; }
+                    color: [0.431,0.806,0.914]
+                    width: 1px
+                    join: round
+        water_boundaries-not-ocean:
+            # filter: { boundary: yes, not: { kind: [ocean,playa] }, $zoom: { min: 8 } }
+            filter:
+                all:
+                    - boundary: yes
+                    - not: { kind: [ocean,playa] }
+                    - $zoom: { min: 8}
+                # WARNING: any area filters here must match the area filters in the lakes layer
+                any:
+                    # limit show smaller landuse areas to higher zooms
+                    - { $zoom: { min: 1 },  area: { min: 40000000000 } }
+                    - { $zoom: { min: 2 },  area: { min: 20000000000 } }
+                    # some weird natural earth scale set transition
+                    - { $zoom: { min: 3 },  area: { min: 80000000000 } }
+                    - { $zoom: { min: 4 },  area: { min: 5000000000 } }
+                    - { $zoom: { min: 5 },  area: { min: 700000000 } }
+                    - { $zoom: { min: 6 },  area: { min: 500000000 } }
+                    - { $zoom: { min: 7 },  area: { min: 160000000 } }
+                    - { $zoom: { min: 8 },  area: { min: 40000000 } }
+                    - { $zoom: { min: 9 },  area: { min: 10000000 } }
+                    - { $zoom: { min: 10 }, area: { min: 8000000 } }
+                    - { $zoom: { min: 11 }, area: { min: 2000000 } }
+                    - { $zoom: { min: 12 }, area: { min: 200000 } }
+                    - { $zoom: { min: 13 }, area: { min: 100000 } }
+                    - { $zoom: { min: 14 }, area: { min: 2000 } }
+                    - { $zoom: { min: 15 } }
+            draw:
+                lines:
+                    order: function() { return feature.sort_key; }
+                    # color: [0.625,0.806,0.822]
+                    color: [0.431,0.806,0.914]
+                    width: 1px
+                    join: round
+            early:
+                filter: { $zoom: { min: 14 } }
+                draw:
+                    lines:
+                        order: 241
+            swimming-pools-early:
+                filter: { kind: swimming_pool, $zoom: { max: 19 } }
+                draw:
+                    lines:
+                        visible: false
+            riverbank:
+                # river boundaries like the thames in london, la seine in paris
+                filter: { kind: riverbank }
+                draw:
+                    lines:
+                        color: [0.431,0.806,0.914]
+                        width: 1px
+        river:
+            #river center lines, not boundaries for polygons
+            filter: { kind: [river,canal,stream,dam,ditch,drain], $zoom: { min: 11 }, not: { is_tunnel: true } }
+            draw:
+                lines:
+                    order: function() { return feature.sort_key; }
+                    interactive: true
+                    color: [[10,[0.472,0.834,0.890]],[14,[0.511,0.877,0.930]]]
+                    # color: [0.592,0.929,0.961]
+                    #color: [[11,[0.753,0.820,0.835]],[12,[0.710,0.800,0.824]],[13,[0.886,0.937,0.988]]]
+                    #width: [[14,2.5px],[15,4.0px],[17,8.0px],[18,10.0px]]
+                    width: [[10,0px],[11,0.75px],[12,1.0px],[13,1.25px],[14,2.25px],[15,3px],[16,4px],[17,5m]]
+                    cap: round
+                    outline:
+                        #color: [[11,[0.671,0.788,0.812]],[13,[0.710,0.800,0.824]],[14,[0.635,0.812,0.843]]]
+                        width: [[9,0px],[11,0px],[12,0px],[13,0.5px],[14,0.75px],[15,0.75px],[16,0.75px],[17,1px]]
+            not-river-early:
+                filter: { $zoom: [11,12], not: { kind: river } }
+                draw:
+                    lines:
+                        width: [[11,0px], [12,0.6px]]
+            intermittent:
+                filter:
+                    any:
+                        - intermittent: yes
+                        - kind: drain
+                draw:
+                    lines:
+                        visible: false
+                    dots-lines:
+                        interactive: true
+                        order: function() { return feature.sort_key; }
+                        color: [[10,[0.472,0.834,0.890]],[14,[0.511,0.877,0.930]]]
+                        width: [[10,0px],[11,0.5px],[12,1px],[13,2px],[14,3px],[15,4px],[16,5px]]
+
+    landuse:
+        data: { source: mapzen }
+        draw:
+            terrain:
+                order: function() { return feature.sort_key; }
+                visible: false
+        tier1:
+            filter:
+                any:
+                    # limit show smaller landuse areas to higher zooms
+                    - { $zoom: { min: 3 },  area: { min: 300000000 } }
+                    - { $zoom: { min: 4 },  area: { min: 300000000 } }
+                    - { $zoom: { min: 5 },  area: { min: 150000000 } }
+                    - { $zoom: { min: 6 },  area: { min: 150000000 } }
+                    - { $zoom: { min: 7 },  area: { min: 100000000 } }
+                    - { $zoom: { min: 8 },  area: { min: 10000000 } }
+                    - { $zoom: { min: 9 },  area: { min: 5000000 } }
+                    - { $zoom: { min: 10 }, area: { min: 1000000 } }
+                    - { $zoom: { min: 11 }, area: { min: 500000 } }
+                    - { $zoom: { min: 12 }, area: { min: 500000 } }
+                    - { $zoom: { min: 13 }, area: { min: 100000 } }
+                    - { $zoom: { min: 14 }, area: { min: 50000 } }
+                    - { $zoom: { min: 15 }, area: { min: 20000 } }
+                    - { $zoom: { min: 15 }, area: { min: 2000 } }
+                    - { $zoom: { min: 16 } }
+            national_park:
+                filter: { kind: [national_park, "park or protected land", battlefield], not: { operator: [ "United States Forest Service", "US Forest Service", "U.S. Forest Service", "USDA Forest Service" ] } }
+                draw:
+                    terrain:
+                        interactive: false
+                        color: [0.890,1.00,1.00]
+                        # todo: what is this?
+                        order: 18
+                        visible: true
+                us_national_park:
+                    # yosemite national park, death valley national park, grand canyon national park
+                    filter: { operator: [ "United States National Park Service", "US National Park Service" ] }
+                    draw:
+                        terrain:
+                            visible: true
+
+        tier2:
+            filter:
+                any:
+                    # limit show smaller landuse areas to higher zooms
+                    - { $zoom: { min: 4 },  area: { min: 1000000000 } }
+                    - { $zoom: { min: 5 },  area: { min: 1000000000 } }
+                    - { $zoom: { min: 6 },  area: { min: 150000000 } }
+                    - { $zoom: { min: 7 },  area: { min: 100000000 } }
+                    - { $zoom: { min: 8 },  area: { min: 10000000 } }
+                    - { $zoom: { min: 9 },  area: { min: 5000000 } }
+                    - { $zoom: { min: 10 }, area: { min: 1000000 } }
+                    - { $zoom: { min: 11 }, area: { min: 500000 } }
+                    - { $zoom: { min: 12 }, area: { min: 250000 } }
+                    - { $zoom: { min: 13 }, area: { min: 100000 } }
+                    - { $zoom: { min: 14 }, area: { min: 50000 } }
+                    - { $zoom: { min: 15 }, area: { min: 20000 } }
+                    - { $zoom: { min: 15 }, area: { min: 2000 } }
+                    - { $zoom: { min: 16 } }
+            conservation:
+                filter:
+                    kind: [conservation, protected_area, nature_reserve]
+                    $zoom: { min: 4 }
+                draw:
+                    terrain:
+                        # color: [1.00,0.974,0.950]
+                        color: [0.945,0.995,0.945]
+                        visible: true
+                wilderness-areas:
+                    filter: function() { return feature.name && feature.name.indexOf("Wilderness") > -1 }
+                    draw:
+                        terrain:
+                            order: 25
+                            visible: true
+
+                national_forest_level_6:
+                    filter: { protect_class: ["6",6] }
+                    draw:
+                        terrain:
+                            color: [0.945,0.995,0.945] #*green7
+                            visible: true
+
+            # gotta be a protected area to draw green, not just a landcover type
+            farm:
+                filter:
+                    kind: [farm, farmland]
+                    $zoom: { min: 10}
+                draw:
+                    polygons:
+                        color: [1.00,1.00,1.00]
+                        visible: *green4_v
+            forest:
+                filter: { kind: [forest,wood], $zoom: { min: 6 } }
+                national-forest:
+                    filter:
+                        operator: [ "United States Forest Service", "US Forest Service", "U.S. Forest Service", "USDA Forest Service" ]
+                    draw:
+                        terrain:
+                            color: [0.936,0.981,0.946]
+                            visible: true
+
+                landuse-forest:
+                    filter:
+                        not: { operator: [ "United States Forest Service", "US Forest Service", "U.S. Forest Service", "USDA Forest Service" ] }
+                        $zoom: { min: 6 }
+                    draw:
+                        terrain:
+                            color: [0.936,0.981,0.946]
+                            visible: true
+
+            nature_reserve:
+                filter: { kind: nature_reserve, $zoom: { min: 7 } }
+                draw:
+                    terrain-grid:
+                        order: function() { return feature.sort_key; }
+                wilderness-areas:
+                    filter: function() { return feature.name && feature.name.indexOf("Wilderness") > -1 }
+                    draw:
+                        terrain:
+                            color: [0.890,0.973,0.886]
+                        # outline:
+                        #     style: lines
+                        #     color: red
+                        #     width: [[9,1px],[10,2px],[12,4px]]
+
+            parks-and-national-forests-not-national-park:
+                filter: { $zoom: { min: 4 }, kind: [park, national_park, "park or protected land", battlefield], not: { operator: [ "United States National Park Service", "US National Park Service" ] } }
+                # default for national forests and more?
+                draw:
+                    terrain:
+                        color: [0.880,1.000,0.950]
+                        # color: [0.850,1.000,0.938]
+                        # color: [0.860,0.993,1.000]
+                        # color: [0.915,0.995,0.995]
+                        visible: true
+            # urban:
+            #     filter: { kind: [urban, rural, residential] }
+            #     visible: *earth2_v
+            #     draw:
+            #         polygons:
+            #             color: [1.00,1.00,1.00]
+            #             visible: *earth2_v
+        tier3:
+            filter:
+                any:
+                    # limit show smaller landuse areas to higher zooms
+                    - { $zoom: { min: 8 },  area: { min: 10000000 } }
+                    - { $zoom: { min: 9 },  area: { min: 5000000 } }
+                    - { $zoom: { min: 10 }, area: { min: 1000000 } }
+                    - { $zoom: { min: 11 }, area: { min: 500000 } }
+                    - { $zoom: { min: 12 }, area: { min: 500000 } }
+                    - { $zoom: { min: 13 }, area: { min: 100000 } }
+                    - { $zoom: { min: 14 }, area: { min: 50000 } }
+                    - { $zoom: { min: 15 }, area: { min: 20000 } }
+                    - { $zoom: { min: 15 }, area: { min: 2000 } }
+                    - { $zoom: { min: 16 } }
+            airport:
+                filter:
+                    kind: aerodrome
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: *purple_v
+            military:
+                filter:
+                    kind: military
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+            university:
+                filter:
+                    kind: [university, college]
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+        tier4:
+            filter:
+                any:
+                    # limit show smaller landuse areas to higher zooms
+                    - { $zoom: { min: 10 }, area: { min: 1000000 } }
+                    - { $zoom: { min: 11 }, area: { min: 500000 } }
+                    - { $zoom: { min: 12 }, area: { min: 500000 } }
+                    - { $zoom: { min: 13 }, area: { min: 100000 } }
+                    - { $zoom: { min: 14 }, area: { min: 50000 } }
+                    - { $zoom: { min: 15 }, area: { min: 20000 } }
+                    - { $zoom: { min: 15 }, area: { min: 2000 } }
+                    - { $zoom: { min: 16 } }
+            cemetery:
+                filter:
+                    kind: cemetery
+                draw:
+                    terrain:
+                        color: [0.982,1.000,0.960]
+                        visible: true
+            golf_course:
+                filter:
+                    kind: golf_course
+                draw:
+                    terrain:
+                        color: [0.890,1.000,0.892]
+                        # color: [0.840,1.000,0.907]
+                        visible: true
+            hospital:
+                filter:
+                    kind: hospital
+                draw:
+                    terrain:
+                        color: [0.988,0.938,0.953]
+                        visible: true
+            industrial:
+                filter:
+                    kind: industrial
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+            power:
+                filter: { kind: [plant, generator, substation] }
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+            railway:
+                filter:
+                    kind: railway
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+        # IGNORE THIS FOR NOW
+        #     sports_centre:
+        #         filter:
+        #             kind: sports_centre
+        #         draw:
+        #             polygons:
+        #                 color: [1.0,1.0,1.0]
+            recreation_ground:
+                filter:
+                    kind: recreation_ground
+                draw:
+                    terrain:
+                        color: [0.945,0.995,0.945]
+                        visible: true
+            stadium:
+                filter:
+                    kind: stadium
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+            zoo:
+                filter:
+                    kind: [zoo, wildlife_park]
+                draw:
+                    terrain:
+                        color: [0.830,1.000,0.972]
+                        visible: true
+            winter_sports:
+                filter:
+                    kind: winter_sports
+                draw:
+                    terrain:
+                        color: [1.0,1.0,1.0]
+                        visible: *grey8_v
+            man-made:
+                filter: { kind: [pier,wastewater_plant,works,bridge,tower,breakwater,water_works,groyne,dike,cutline] }
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+                pier:
+                    filter: { kind: [pier,bridge,breakwater,groyne,dike,cutline] }
+                    draw:
+                        terrain:
+                            color: [1.000,0.973,0.930]
+                            visible: true
+            camp_site:
+                filter: { kind: camp_site }
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+
+        tier5:
+            filter:
+                any:
+                    # limit show smaller landuse areas to higher zooms
+                    - { $zoom: { min: 10 }, area: { min: 1000000 } }
+                    - { $zoom: { min: 11 }, area: { min: 400000 } }
+                    - { $zoom: { min: 12 }, area: { min: 200000 } }
+                    - { $zoom: { min: 13 }, area: { min: 50000 } }
+                    - { $zoom: { min: 14 }, area: { min: 20000 } }
+                    - { $zoom: { min: 15 }, area: { min: 10000 } }
+                    - { $zoom: { min: 15 }, area: { min: 2000 } }
+                    - { $zoom: { min: 16 } }
+                all:
+                    - kind:
+                        - theme_park
+                        - resort
+                        - aquarium
+                        - winery
+                        - maze
+                        - beach
+            tourism-related:
+                filter:
+                    kind:
+                        - theme_park
+                        - resort
+                        - aquarium
+                        - winery
+                        - maze
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+            beach:
+                filter:
+                    kind: beach
+                draw:
+                    terrain:
+                        color: [1.000,0.953,0.900]
+                        # color: [0.975,0.975,0.828]
+                        visible: true
+        tier6:
+            filter:
+                any:
+                    # limit show smaller landuse areas to higher zooms
+                    - { $zoom: { min: 12 }, area: { min: 500000 } }
+                    - { $zoom: { min: 13 }, area: { min: 100000 } }
+                    - { $zoom: { min: 14 }, area: { min: 50000 } }
+                    - { $zoom: { min: 15 }, area: { min: 20000 } }
+                    - { $zoom: { min: 15 }, area: { min: 2000 } }
+                    - { $zoom: { min: 16 } }
+            garden:
+                filter:
+                    kind: [garden, allotments]
+                draw:
+                    terrain:
+                        color: [0.790,0.973,0.896]
+                        visible: true
+            parking:
+                filter:
+                    all:
+                        - kind: parking
+                        - $zoom: { min: 14 }
+                    any:
+                        - { $zoom: { min: 14 }, area: { min: 10000 } }
+                        - { $zoom: { min: 15 }, area: { min: 5000 } }
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: *grey1_v
+                early:
+                    filter: { $zoom: { max: 15 } }
+                    draw:
+                        terrain:
+                            color: [0.950,0.950,0.950]
+                            visible: true
+        pedestrian:
+            filter:
+                kind: [pedestrian,common]
+            draw:
+                terrain:
+                    color: [0.945,0.995,0.945]
+                    visible: *grey1_v
+            green-stuff:
+                filter:
+                    surface: [grass]
+                draw:
+                    terrain:
+                        color: [0.791,0.953,0.883]
+
+        glacier:
+            filter:
+                kind: glacier
+            draw:
+                terrain:
+                    color: [0.890,0.970,1.000]
+                    # color: [0.975,0.975,0.828]
+                    visible: true
+
+        minor_green_stuff:
+            filter:
+                kind: [pitch, meadow, village_green, grass, farmland, playground]
+            draw:
+                terrain:
+                    color: [0.808,0.962,0.951]
+                    # color: [0.702,0.949,0.932]
+                    # color: [0.975,0.975,0.828]
+                    visible: true
+            farmland_friends:
+                filter: { kind: [farmland] }
+                draw:
+                    terrain:
+                        color: [0.965,0.996,0.965]
+                        #visible: false
+            meadow_friends:
+                filter: { kind: [meadow, grass] }
+                draw:
+                    terrain:
+                        color: [0.825,0.976,0.895]
+            pitch_later:
+                filter: { kind: pitch, $zoom: { min: 17 } }
+                draw:
+                    lines:
+                        color: [0.526,0.809,0.752]
+                        order: 500
+                        width: 0.5m
+
+        wetland:
+            filter:
+                kind: [wetland]
+            draw:
+                terrain:
+                    color: [0.930,0.973,0.980]
+                    # color: [0.975,0.975,0.828]
+                    visible: true
+        scrub:
+            filter:
+                kind: [scrub]
+            draw:
+                terrain:
+                    color: [1.000,0.973,0.930]
+                    # color: [0.975,0.975,0.828]
+                    visible: true
+            later:
+                filter: { $zoom: { min: 15 } }
+                draw:
+                    lines:
+                        color: blue
+                        width: 0.5px
+
+        minor_other_stuff:
+            filter:
+                kind: [scree, farmyard]
+            draw:
+                terrain:
+                    color: [1.000,0.953,0.900]
+                    # color: [0.975,0.975,0.828]
+                    visible: true
+            later:
+                filter: { $zoom: { min: 15 } }
+                draw:
+                    lines:
+                        color: red
+                        width: 0.5px
+
+            place_of_worship:
+                filter:
+                    kind: place_of_worship
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: *grey1_v
+            playground:
+                filter:
+                    kind: playground
+                draw:
+                    terrain:
+                        color: [0.795,1.000,0.955]
+                        visible: true
+            school:
+                filter:
+                    kind: school
+                draw:
+                    terrain:
+                        color: *gray-all
+                        visible: true
+
+            minor-landuse:
+                filter:
+                    kind:
+                        - attraction
+                        - artwork
+                        - wilderness_hut
+                        - hanami
+                draw:
+                    terrain:
+                        color: [0.795,1.000,0.955]
+                        visible: true
+
+        # GO MELLOW
+        # 18/41.19776/-8.68722
+        tree_row:
+            filter:
+                kind: tree_row
+            draw:
+                lines:
+                    order: 501 # function() { return feature.sort_key; }
+                    color: [0.602,0.860,0.722]
+                    width: [[16,1px],[17,2px],[19,1.5m]]
+                    visible: true
+        # GO MELLOW
+        # 20/37.76779/-122.40096
+        hedge:
+            filter:
+                kind: hedge
+            draw:
+                lines:
+                    order: 500 # function() { return feature.sort_key; }
+                    color: [0.602,0.860,0.722]
+                    width: [[16,0.5px],[17,1px],[19,1m]]
+                    visible: true
