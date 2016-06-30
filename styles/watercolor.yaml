@@ -54,5 +54,5 @@ layers:
         draw:
             text:
                 font:
-                    fill: [1.0,1.0,1.0]
+                    fill: [0.409,0.437,0.477]
                     size: 16px
