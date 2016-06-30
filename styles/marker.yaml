@@ -44,7 +44,7 @@ layers:
         draw:
             lines: 
                 order: 2
-                color: [.3, .3, .3]
+                color: [1.0,1.0,1.0]
                 width: 1px
 
     places:
@@ -56,4 +56,3 @@ layers:
                 font:
                     fill: white
                     size: 16px
-                    stroke: { color: '#444', width: 4px}
