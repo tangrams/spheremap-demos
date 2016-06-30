@@ -12,7 +12,6 @@ styles:
 
     terrain:
         base: polygons
-        # mix: [grid]
         raster: normal
         shaders:
             uniforms:
@@ -70,4 +69,3 @@ layers:
                 font:
                     fill: white
                     size: 16px
-                    stroke: { color: '#444', width: 4px}
