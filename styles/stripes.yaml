@@ -68,4 +68,4 @@ layers:
                 font:
                     fill: white
                     size: 16px
-                    stroke: { color: [0.15,0.15,0.15], width: 4px}
+                    stroke: { color: [0.0,0.0,0.0], width: 4px}
