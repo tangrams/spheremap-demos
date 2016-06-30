@@ -1,4 +1,12 @@
-# sphere-demos
+# spheremap-demos
+
+Exploratory work with sphere maps. Please read Peter Richardson's blog post [Mapping Mountains](https://mapzen.com/blog/mapping-mountains/) post on the [Mapzen blog](http://mapzen.com/blog) for more info on sphere maps.
+
+<img src="https://tangrams.github.io/spheremap-demos/img/crayon-map.jpg">
+
+## Sphere Map examples
+- pencil: https://tangrams.github.io/spheremap-demos/?url=styles/pencil2.yaml#12/37.8090/-122.2220
+- smudged pencil: https://tangrams.github.io/spheremap-demos/?url=styles/pencil.yaml#12/37.8090/-122.2220
 
 
 ### To run locally:
