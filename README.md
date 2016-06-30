@@ -29,4 +29,4 @@ If that doesn't work, try:
 
     python -m http.server 8000
     
-Then navigate to, eg: [http://localhost:8000/?url=styles/contours.yaml](http://localhost:8000/?url=styles/pencil.yaml)
+Then navigate to, eg: [http://localhost:8000/?url=styles/pencil.yaml](http://localhost:8000/?url=styles/pencil.yaml)
