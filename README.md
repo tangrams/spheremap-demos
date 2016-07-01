@@ -5,18 +5,6 @@ Exploratory work with sphere maps. Please read Peter Richardson's blog post [Map
 <img src="https://tangrams.github.io/spheremap-demos/img/crayon-map.jpg">
 
 ## Sphere Map examples
-- pencil: https://tangrams.github.io/spheremap-demos/?url=styles/pencil2.yaml#12/37.8090/-122.2220
-- smudged pencil: https://tangrams.github.io/spheremap-demos/?url=styles/pencil.yaml#12/37.8090/-122.2220
-- colored pencil: https://tangrams.github.io/spheremap-demos/?url=styles/color-pencil.yaml#12/37.8090/-122.2220
-- markers: https://tangrams.github.io/spheremap-demos/?url=styles/marker.yaml#12/37.8090/-122.2220
-- crayon: https://tangrams.github.io/spheremap-demos/?url=styles/crayon.yaml#12/37.8090/-122.2220
-- watercolors: https://tangrams.github.io/spheremap-demos/?url=styles/watercolor2.yaml#12/37.8090/-122.2220
-- watercolors: https://tangrams.github.io/spheremap-demos/?url=styles/watercolor.yaml#12/37.8090/-122.2220
-- stripes: https://tangrams.github.io/spheremap-demos/?url=styles/stripes.yaml#12/37.8090/-122.2220
-- glitch: https://tangrams.github.io/spheremap-demos/?noscroll&url=styles/glitch.yaml#12/37.8773/-121.9292
-- Roland Flexner: https://tangrams.github.io/spheremap-demos/?noscroll&url=styles/flexner.yaml#12/37.8773/-121.9292
-- Kelsey Brookes: https://tangrams.github.io/spheremap-demos/?noscroll&url=styles/kelseybrookes.yaml#12/37.8773/-121.9292
-- Walkabout sphere map: https://tangrams.github.io/spheremap-demos/?noscroll&url=styles/walkabout.yaml#12/37.8773/-121.9292
 
 
 ### To run locally:
