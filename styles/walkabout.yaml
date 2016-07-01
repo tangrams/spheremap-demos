@@ -217,8 +217,8 @@ layers:
                 draw:
                     lines:
                         visible: false
-                    dots-lines:
-                        interactive: true
-                        order: function() { return feature.sort_key; }
-                        color: [[10,[0.472,0.834,0.890]],[14,[0.511,0.877,0.930]]]
-                        width: [[10,0px],[11,0.5px],[12,1px],[13,2px],[14,3px],[15,4px],[16,5px]]
+                    # dots-lines:
+                    #     interactive: true
+                    #     order: function() { return feature.sort_key; }
+                    #     color: [[10,[0.472,0.834,0.890]],[14,[0.511,0.877,0.930]]]
+                    #     width: [[10,0px],[11,0.5px],[12,1px],[13,2px],[14,3px],[15,4px],[16,5px]]
