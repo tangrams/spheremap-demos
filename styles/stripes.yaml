@@ -1,7 +1,7 @@
 sources:
     osm: 
         type: TopoJSON
-        url: https://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-JUsa0Gc
+        url: https://tile.mapzen.com/mapzen/vector/v1/all/{z}/{x}/{y}.topojson?api_key=mapzen-JUsa0Gc
         max_zoom: 16
     normals:
         type: Raster
@@ -12,6 +12,7 @@ styles:
 
     terrain:
         base: polygons
+        lighting: false
         # mix: [grid]
         raster: normal
         shaders:
@@ -44,8 +45,9 @@ layers:
             terrain:
                 order: 0
 
-    earth:
-        data: { source: osm }
+    water-lines:
+        data: { source: osm, layer: water }
+        filter: { kind: ocean, boundary: true }
         draw:
             lines: 
                 order: 2
@@ -62,7 +64,7 @@ layers:
     places:
         data: { source: osm}
         filter: 
-            kind: [city]
+            kind_detail: [city]
         draw:
             text:
                 font:
