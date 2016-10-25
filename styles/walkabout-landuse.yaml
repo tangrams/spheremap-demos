@@ -184,7 +184,7 @@ scene:
 sources:
     mapzen: 
         type: TopoJSON
-        url: https://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-JUsa0Gc
+        url: https://tile.mapzen.com/mapzen/vector/v1/all/{z}/{x}/{y}.topojson?api_key=mapzen-JUsa0Gc
         max_zoom: 16
         rasters: [normals]
     normals:
@@ -241,7 +241,7 @@ layers:
         data: { source: mapzen}
         draw:
             terrain:
-                order: function() { return feature.sort_key; }
+                order: function() { return feature.sort_rank; }
                 color: [1.0, 1.0, 1.0]
 
     water:
@@ -249,13 +249,13 @@ layers:
         draw:
             polygons:
                 #interactive: true
-                order: function() { return feature.sort_key; }
+                order: function() { return feature.sort_rank; }
                 #color: [0.608,0.925,0.965]
         later:
             filter: { $zoom: { min: 12 } }
             draw:
                 polygons:
-                    order: function() { return feature.sort_key + 1; }
+                    order: function() { return feature.sort_rank + 1; }
                     #color: [0.608,0.925,0.965]
 
         lakes:
@@ -290,7 +290,7 @@ layers:
             filter: { kind: playa, $zoom: {min: 6} }
             draw:
                 dashedline:
-                    order: function() { return feature.sort_key; }
+                    order: function() { return feature.sort_rank; }
                     color: grey
                     width: 1px
                 polygons_transparent:
@@ -309,7 +309,7 @@ layers:
             filter: { boundary: yes, kind: ocean, $zoom: {min: 1, max: 17} }
             draw:
                 lines:
-                    order: function() { return feature.sort_key; }
+                    order: function() { return feature.sort_rank; }
                     color: [0.431,0.806,0.914]
                     width: 1px
                     join: round
@@ -317,7 +317,7 @@ layers:
             filter: { boundary: yes, kind: ocean, $zoom: {min: 17} }
             draw:
                 lines:
-                    order: function() { return feature.sort_key; }
+                    order: function() { return feature.sort_rank; }
                     color: [0.431,0.806,0.914]
                     width: 1px
                     join: round
@@ -349,7 +349,7 @@ layers:
                     - { $zoom: { min: 15 } }
             draw:
                 lines:
-                    order: function() { return feature.sort_key; }
+                    order: function() { return feature.sort_rank; }
                     # color: [0.625,0.806,0.822]
                     color: [0.431,0.806,0.914]
                     width: 1px
@@ -376,7 +376,7 @@ layers:
             filter: { kind: [river,canal,stream,dam,ditch,drain], $zoom: { min: 11 }, not: { is_tunnel: true } }
             draw:
                 lines:
-                    order: function() { return feature.sort_key; }
+                    order: function() { return feature.sort_rank; }
                     interactive: true
                     color: [[10,[0.472,0.834,0.890]],[14,[0.511,0.877,0.930]]]
                     # color: [0.592,0.929,0.961]
@@ -402,7 +402,7 @@ layers:
                         visible: false
                     dots-lines:
                         interactive: true
-                        order: function() { return feature.sort_key; }
+                        order: function() { return feature.sort_rank; }
                         color: [[10,[0.472,0.834,0.890]],[14,[0.511,0.877,0.930]]]
                         width: [[10,0px],[11,0.5px],[12,1px],[13,2px],[14,3px],[15,4px],[16,5px]]
 
@@ -410,7 +410,7 @@ layers:
         data: { source: mapzen }
         draw:
             terrain:
-                order: function() { return feature.sort_key; }
+                order: function() { return feature.sort_rank; }
                 visible: false
         tier1:
             filter:
@@ -520,7 +520,7 @@ layers:
                 filter: { kind: nature_reserve, $zoom: { min: 7 } }
                 draw:
                     terrain:
-                        order: function() { return feature.sort_key; }
+                        order: function() { return feature.sort_rank; }
                 wilderness-areas:
                     filter: function() { return feature.name && feature.name.indexOf("Wilderness") > -1 }
                     draw:
@@ -896,7 +896,7 @@ layers:
                 kind: tree_row
             draw:
                 lines:
-                    order: 501 # function() { return feature.sort_key; }
+                    order: 501 # function() { return feature.sort_rank; }
                     color: [0.602,0.860,0.722]
                     width: [[16,1px],[17,2px],[19,1.5m]]
                     visible: true
@@ -907,7 +907,7 @@ layers:
                 kind: hedge
             draw:
                 lines:
-                    order: 500 # function() { return feature.sort_key; }
+                    order: 500 # function() { return feature.sort_rank; }
                     color: [0.602,0.860,0.722]
                     width: [[16,0.5px],[17,1px],[19,1m]]
                     visible: true
