@@ -1,0 +1,64 @@
+sources:
+    osm:
+        type: TopoJSON
+        url: https://tile.mapzen.com/mapzen/vector/v1/all/{z}/{x}/{y}.topojson
+        url_params:
+            api_key: mapzen-tDHBHDp
+        max_zoom: 16
+    normals:
+        type: Raster
+        url: https://tile.mapzen.com/mapzen/terrain/v1/normal/{z}/{x}/{y}.png
+        url_params:
+            api_key: mapzen-tDHBHDp
+        max_zoom: 15
+
+styles:
+    terrain-envmap:
+        base: raster
+        lighting: false
+        raster: normal
+        shaders:
+            uniforms:
+                u_scale: .5
+                u_envmap: ../img/watercolor-test1.jpg
+            blocks:
+                global: |
+                    // Simplified view-independent environment map
+                    vec4 applyEnvmap (in sampler2D _tex, in vec3 _normal) {
+                        const vec3 eye = vec3(0.,0.,-1.);
+                        vec3 r = reflect(eye, _normal);
+                        r.z += 1.0;
+                        float m = 2. * length(r);
+                        vec2 uv = r.xy / m + .5;
+                        return texture2D(_tex, uv);
+                    }
+                color: |
+                    normal.z *= u_scale;
+                    normal = normalize(normal);
+                    color = applyEnvmap(u_envmap, normal);
+
+layers:
+    terrain:
+        data: { source: normals, layer: _default }
+        draw:
+            terrain-envmap:
+                order: 0
+
+    water-lines:
+        data: { source: osm, layer: water }
+        filter: { kind: ocean, boundary: true }
+        draw:
+            lines:
+                order: 2
+                color: [1.0,1.0,1.0]
+                width: 1px
+
+    places:
+        data: { source: osm}
+        filter:
+            kind_detail: [city]
+        draw:
+            text:
+                font:
+                    fill: [1.0,1.0,1.0]
+                    size: 16px
