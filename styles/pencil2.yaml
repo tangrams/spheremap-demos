@@ -1,11 +1,16 @@
 sources:
     osm: 
         type: TopoJSON
-        url: https://meetar.github.io/mapzen-tiles/vector/v1/256/all/{z}/{x}/{y}.topojson
-        max_zoom: 8
+        url: https://tile.mapzen.com/mapzen/vector/v1/all/{z}/{x}/{y}.topojson
+        url_params:
+            api_key: mapzen-JUsa0Gc
+        max_zoom: 16
     normals:
         type: Raster
-        url: https://s3.amazonaws.com/elevation-tiles-prod/normal/{z}/{x}/{y}.png
+        url: https://tile.mapzen.com/mapzen/terrain/v1/normal/{z}/{x}/{y}.png
+        url_params:
+            api_key: mapzen-tDHBHDp
+        max_zoom: 15
 
 styles: 
     terrain-envmap:
@@ -27,7 +32,7 @@ styles:
                         vec2 uv = r.xy / m + .5;
                         return texture2D(_tex, uv);
                     }
-                color: |                    
+                color: |
                     normal.z *= u_scale;
                     normal = normalize(normal);
                     color = applyEnvmap(u_envmap, normal);

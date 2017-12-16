@@ -26,7 +26,7 @@ styles:
     #                     vec2 uv = r.xy / m + .5;
     #                     return texture2D(_tex, uv);
     #                 }
-    #             color: |                    
+    #             color: |
     #                 normal.z *= u_scale;
     #                 normal = normalize(normal);
     #                 color = applyEnvmap(u_envmap, normal);
@@ -166,7 +166,7 @@ styles:
         mix: [space-tile, functions-map, terrain, shapes-cross]
         shaders:
             blocks:
-                color: |                    
+                color: |
                     // Brightness
                     float brightness = dot(normal, vec3(-0.838,-1.010,0.805));
 

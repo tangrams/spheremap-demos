@@ -26,7 +26,7 @@ styles:
                         vec2 uv = r.xy / m + .5;
                         return texture2D(_tex, uv);
                     }
-                color: |              
+                color: |
                     // color = v_color;
                     normal.z /= u_scale; // turn terrain exaggeration up/down
                     normal = normalize(normal);
